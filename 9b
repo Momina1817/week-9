@@ -1,0 +1,87 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+// ---------------------- DATA MODEL ----------------------
+
+class User {
+  final int id;
+  final String name;
+  final String email;
+  final String phone;
+
+  const User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse(json['id'].toString()) ?? 0,
+      name: json['name']?.toString() ?? 'N/A',
+      email: json['email']?.toString() ?? 'N/A',
+      phone: json['phone']?.toString() ?? 'N/A',
+    );
+  }
+}
+
+// ---------------------- FETCH FUNCTION ----------------------
+
+Future<List<User>> fetchUsers() async {
+  const String url =
+      'https://jsonplaceholder.typicode.com/users';
+
+  try {
+    final response = await http.get(
+      Uri.parse(url),
+    );
+
+    if (response.statusCode == 200) {
+      final dynamic decodedData =
+          jsonDecode(response.body);
+
+      if (decodedData is List) {
+        return decodedData
+            .map(
+              (item) => User.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      }
+
+      throw Exception('Invalid response format');
+    } else {
+      throw Exception(
+        'Server returned status code: ${response.statusCode}',
+      );
+    }
+  } catch (e) {
+    throw Exception(
+      'Failed to load users: $e',
+    );
+  }
+}
+
+// ---------------------- MAIN APP ----------------------
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: UserListScreen(),
+    );
+  }
+}
